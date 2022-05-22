@@ -1,0 +1,8 @@
+name: UfoRace
+version: '${project.version}'
+main: com.chilieutenant.uforace.Main
+api-version: 1.17
+depend:
+  - ProtocolLib
+commands:
+  ur:
