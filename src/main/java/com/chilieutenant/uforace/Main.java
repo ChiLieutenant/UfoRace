@@ -1,7 +1,10 @@
 package com.chilieutenant.uforace;
 
+import com.chilieutenant.uforace.NFTSelection.NFTEvents;
+import com.chilieutenant.uforace.NFTSelection.NFTItem;
 import com.chilieutenant.uforace.arena.*;
 import com.chilieutenant.uforace.items.ItemListener;
+import com.chilieutenant.uforace.utils.Utils;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
@@ -9,22 +12,32 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import io.lumine.mythic.bukkit.BukkitAdapter;
-import io.lumine.mythic.bukkit.MythicBukkit;
-import io.lumine.mythic.core.mobs.ActiveMob;
+import com.mongodb.client.MongoDatabase;
+import com.nftworlds.wallet.api.WalletAPI;
+import de.leonhard.storage.Yaml;
 import lombok.Getter;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.Vector;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class Main extends JavaPlugin {
 
     @Getter public static Main instance;
+    @Getter private static WalletAPI wallet;
+    @Getter private static LuckPerms luckperms;
+    @Getter private static MongoDatabase dndDB = MongoUtils.loadDatabase("happyplace");
+    @Getter private static Yaml inventorycfg;
+    @Getter private static Inventory inv;
+    @Getter private static List<NFTItem> items = new ArrayList<>();
+    @Getter private static String invname;
     private ProtocolManager pm;
 
     @Override
@@ -71,14 +84,56 @@ public final class Main extends JavaPlugin {
         });
         instance = this;
         ArenaMethods.loadArenas();
+        Bukkit.getPluginManager().registerEvents(new NFTEvents(), this);
         Bukkit.getPluginManager().registerEvents(new ArenaListener(), this);
         Bukkit.getPluginManager().registerEvents(new ItemListener(), this);
+
         this.getCommand("ur").setExecutor(new UfoRaceCommand());
         this.getCommand("ur").setTabCompleter(new UfoRaceTC());
+
+        wallet = new WalletAPI();
+        luckperms = LuckPermsProvider.get();
+        inventorycfg = new Yaml(new File("plugins/Uforace/inventory.yaml"));
+
+        saveDefault();
+        inv = Bukkit.createInventory(null, inventorycfg.getInt("size"), invname);
+        loadDefault();
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    @Getter private static String[] vehs = {"truck", "spacecar1", "spacecar2", "car", "car2", "car3", "bike", "bike2", "bike3", "dozer", "atv", "cybertruck" };
+
+    public void saveDefault(){
+        ArrayList<String> list = new ArrayList();
+        list.add("&aTest lore");
+
+        int i = 0;
+        for(String veh : vehs){
+            inventorycfg.setDefault("vehs." + veh + ".name", "&a"+veh);
+            inventorycfg.setDefault("vehs." + veh + ".nftname", veh);
+            inventorycfg.setDefault("vehs." + veh + ".slot", i);
+            inventorycfg.setDefault("vehs." + veh + ".lore", list);
+            i++;
+        }
+
+        inventorycfg.setDefault("size", 2*9);
+        inventorycfg.setDefault("name", "&aInventory");
+
+        invname = Utils.replaceColorCodes(inventorycfg.getString("name"));
+    }
+
+    public void loadDefault(){
+        for(String set : inventorycfg.singleLayerKeySet("vehs")){
+            String name = inventorycfg.getString("vehs." + set + ".nftname");
+            int slot = inventorycfg.getInt("vehs." + set + ".slot");
+            ItemStack item = Utils.itemBuilder(set, inventorycfg);
+            inv.setItem(slot, item);
+
+            new NFTItem(name, slot, item);
+        }
     }
 }

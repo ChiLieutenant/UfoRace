@@ -1,7 +1,9 @@
 package com.chilieutenant.uforace.arena;
 
+import com.chilieutenant.uforace.Main;
 import com.chilieutenant.uforace.events.GameJoinEvent;
 import com.chilieutenant.uforace.events.GameLeaveEvent;
+import com.chilieutenant.uforace.utils.NFTMethods;
 import io.lumine.mythic.bukkit.BukkitAPIHelper;
 import io.lumine.mythic.bukkit.BukkitAdapter;
 import io.lumine.mythic.bukkit.MythicBukkit;
@@ -128,6 +130,10 @@ public class UfoRaceCommand implements CommandExecutor {
                 arena.removePlayerFromArena(player);
                 player.teleport(player.getWorld().getSpawnLocation());
             }
+        }
+
+        if (args[0].equalsIgnoreCase("test")) {
+            player.openInventory(Main.getInv());
         }
         return false;
     }

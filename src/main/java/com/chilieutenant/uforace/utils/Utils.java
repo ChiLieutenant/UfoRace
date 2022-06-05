@@ -1,5 +1,9 @@
 package com.chilieutenant.uforace.utils;
 
+import com.chilieutenant.uforace.Main;
+import de.leonhard.storage.Yaml;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.Node;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -110,6 +114,50 @@ public class Utils {
         ItemMeta im = item.getItemMeta();
         im.setDisplayName(name);
         item.setItemMeta(im);
+        return item;
+    }
+
+    public static void addPermission(Player player, String permission) {
+        // Load, modify, then save
+        Main.getLuckperms().getUserManager().modifyUser(player.getUniqueId(), user -> {
+            // Add the permission
+            user.data().add(Node.builder(permission).build());
+        });
+    }
+
+    public static void removePermission(Player player, String permission){
+        Main.getLuckperms().getUserManager().modifyUser(player.getUniqueId(), user -> {
+            // Add the permission
+            user.data().remove(Node.builder(permission).build());
+        });
+    }
+
+    public static boolean hasPermission(Player player, String permission) {
+        User user = Main.getLuckperms().getUserManager().getUser(player.getUniqueId());
+        return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+    }
+
+    public static String replaceColorCodes(String text){
+        return ChatColor.translateAlternateColorCodes('&', text);
+    }
+
+    public static List<String> replaceColors(List<String> l){
+        List<String> list = new ArrayList<>();
+
+        for(String string : l){
+            list.add(replaceColorCodes(string));
+        }
+
+        return list;
+    }
+
+    public static ItemStack itemBuilder(String nameInTheConfig, Yaml config){
+        ItemStack item = new ItemStack(Material.MINECART);
+        ItemMeta itemMeta = item.getItemMeta();
+        itemMeta.setDisplayName(replaceColorCodes(config.getString("vehs." + nameInTheConfig+".name")));
+        itemMeta.setLore(replaceColors(config.getStringList("vehs." + nameInTheConfig+".lore")));
+
+        item.setItemMeta(itemMeta);
         return item;
     }
 }

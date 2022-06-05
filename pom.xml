@@ -76,6 +76,10 @@
             <url>https://jitpack.io</url>
         </repository>
         <repository>
+            <id>worldql-partners</id>
+            <url>https://maven.worldql.com/releases</url>
+        </repository>
+        <repository>
             <id>enginehub-maven</id>
             <url>https://maven.enginehub.org/repo/</url>
         </repository>
@@ -116,10 +120,27 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.nftworlds</groupId>
+            <artifactId>wrld-payments-api</artifactId>
+            <version>0.2.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.luckperms</groupId>
+            <artifactId>api</artifactId>
+            <version>5.4</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.ticxo.modelengine</groupId>
             <artifactId>api</artifactId>
             <version>R2.5.0</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>3.12.11</version>
         </dependency>
         <dependency>
             <groupId>io.lumine</groupId>
