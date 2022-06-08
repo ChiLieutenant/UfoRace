@@ -110,7 +110,9 @@ public final class Main extends JavaPlugin {
         controlQueue();
     }
 
-    @Getter private static String[] vehs = {"SAD FOMO Explorer", "SAD To The Moon Spaceship", "Sad Builder", "SAD ATV4ATH", "SAD Speedster", "SAD WAGMI Bike", "SAD Elon", "Sad Tragic Truck", "SAD LFG Bike", "SAD Speedster X", "SAD F1-GM", "SAD Degen Bike" };
+    @Getter private static String[] vehs = {"SAD FOMO Explorer", "SAD To The Moon Spaceship", "Sad Builder", "SAD ATV4ATH",
+                                            "SAD Speedster", "SAD WAGMI Bike", "SAD Elon", "Sad Tragic Truck",
+                                            "SAD LFG Bike", "SAD Speedster X", "SAD F1-GM", "SAD Degen Bike" };
 
     public void saveDefault(){
         ArrayList<String> list = new ArrayList();
