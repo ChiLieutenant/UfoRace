@@ -2,6 +2,7 @@ package com.chilieutenant.uforace.arena;
 
 import com.chilieutenant.uforace.Main;
 import com.chilieutenant.uforace.events.GameJoinEvent;
+import com.chilieutenant.uforace.utils.Utils;
 import com.ticxo.modelengine.api.ModelEngineAPI;
 import io.lumine.mythic.api.MythicPlugin;
 import io.lumine.mythic.bukkit.BukkitAdapter;
@@ -90,6 +91,11 @@ public class ArenaListener implements Listener{
         ItemStack item = player.getInventory().getItemInMainHand();
         if(item.getType() == Material.AIR) return;
         if(item.getType() == Material.RED_BED) Bukkit.dispatchCommand(player, "ur leave");
+        if(item.getType() == Material.COMPASS){
+            if (item.getItemMeta().getDisplayName().equalsIgnoreCase(Utils.replaceColorCodes("&aVehicle selection"))) {
+                player.openInventory(Main.getInv());
+            }
+        }
     }
 
 }

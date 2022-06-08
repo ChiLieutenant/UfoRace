@@ -4,6 +4,7 @@ import com.chilieutenant.uforace.Main;
 import com.chilieutenant.uforace.events.GameFinishEvent;
 import com.chilieutenant.uforace.items.ItemEffects;
 import com.chilieutenant.uforace.items.Items;
+import com.chilieutenant.uforace.utils.NFTMethods;
 import com.chilieutenant.uforace.utils.Utils;
 import com.ticxo.modelengine.api.ModelEngineAPI;
 import com.ticxo.modelengine.api.model.ActiveModel;
@@ -176,9 +177,10 @@ public class Arena {
         armors.put(player, player.getInventory().getArmorContents());
         player.getInventory().setItem(0, new ItemStack(Material.COMPASS));
         player.getInventory().setItem(2, new ItemStack(Material.DIAMOND));
+        player.getInventory().setItem(6, Utils.itemBuilder(Material.COMPASS, "&aVehicle selection"));
         player.getInventory().setItem(8, Utils.getItem(Material.RED_BED, ChatColor.RED + "Leave"));
         player.teleport(getLobbyLocation());
-        setCar(player, "racingcar1");
+        setCar(player, NFTMethods.getPlayerVehicle(player));
     }
 
     public void removePlayerFromQueue(Player player){

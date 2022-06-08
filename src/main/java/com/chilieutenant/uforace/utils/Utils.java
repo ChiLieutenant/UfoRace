@@ -42,6 +42,15 @@ public class Utils {
         return l.getWorld().getName() + ":" + l.getBlockX() + ":" + l.getBlockY() + ":" + l.getBlockZ() + ":" + l.getYaw() + ":" + l.getPitch();
     }
 
+    public static ItemStack itemBuilder(Material mat, String name){
+        ItemStack item = new ItemStack(mat);
+        ItemMeta itemmeta = item.getItemMeta();
+        itemmeta.setDisplayName(replaceColorCodes(name));
+        item.setItemMeta(itemmeta);
+
+        return item;
+    }
+
     static public Location getLocationString(final String s) {
         if (s == null || s.trim() == "") {
             return null;

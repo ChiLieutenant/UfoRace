@@ -23,11 +23,11 @@ public class MongoUtils {
         return collection;
     }
 
-    public static Object getData(String searchKey, String searchValue, String targetData, String collectionname) {
+    public static String getData(String searchKey, String searchValue, String targetData, String collectionname) {
         MongoCollection<Document> collection = MongoUtils.getCollection(Main.getDndDB(), collectionname);
-        Object data = null;
+        String data = null;
         if(collection.find(Filters.eq(searchKey, searchValue)).first() != null)
-            data = collection.find(Filters.eq(searchKey, searchValue)).first().get(targetData);
+            data = collection.find(Filters.eq(searchKey, searchValue)).first().getString(targetData);
         return data;
     }
 }

@@ -33,8 +33,18 @@ public class NFTMethods {
             JSONObject nft = ownedNFTs.getJSONObject(i).getJSONObject("metadata");
             String vehType = getVehType(nft);
             if(vehType.length() > 1) {
-                Utils.addPermission(p, "vehicle." + vehType);
-            }}
+                Utils.addPermission(p, "vehicle." + vehType.replace(" ", "_"));
+            }
+        }
+
+        String s = MongoUtils.getData("UUID", p.getUniqueId().toString(), "veh", "selectedVEHS");
+        if(s.replace(" ", "_").equalsIgnoreCase(s)){
+            editVehicle(p, "SAD Speedster");
+        }
+    }
+
+    public static String getPlayerVehicle(Player p){
+        return MongoUtils.getData("UUID", p.getUniqueId().toString(), "veh", "selectedVEHS");
     }
 
     @SneakyThrows
@@ -99,9 +109,14 @@ public class NFTMethods {
 
     public static void removePermission(Player p){
         for(String string : Main.getVehs()){
-            if(Utils.hasPermission(p, "vehicle." + string))
-                Utils.removePermission(p, "vehicle." + string);
+            if(Utils.hasPermission(p, "vehicle." + string.replace(" ", "_"))) {
+                Utils.removePermission(p, "vehicle." + string.replace(" ", "_"));
+            }
         }
+    }
+
+    public static String getCar(String string){
+        return Main.getVehmobs().get(string);
     }
 
 }

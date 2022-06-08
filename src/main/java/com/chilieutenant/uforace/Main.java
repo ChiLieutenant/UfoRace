@@ -26,6 +26,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public final class Main extends JavaPlugin {
@@ -39,6 +40,8 @@ public final class Main extends JavaPlugin {
     @Getter private static List<NFTItem> items = new ArrayList<>();
     @Getter private static String invname;
     private ProtocolManager pm;
+
+    @Getter private static HashMap<String, String> vehmobs = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -93,11 +96,12 @@ public final class Main extends JavaPlugin {
 
         wallet = new WalletAPI();
         luckperms = LuckPermsProvider.get();
-        inventorycfg = new Yaml(new File("plugins/Uforace/inventory.yaml"));
+        inventorycfg = new Yaml("inventory", "plugins/UfoRace");
 
         saveDefault();
         inv = Bukkit.createInventory(null, inventorycfg.getInt("size"), invname);
         loadDefault();
+        loadMobs();
     }
 
     @Override
@@ -105,7 +109,7 @@ public final class Main extends JavaPlugin {
         // Plugin shutdown logic
     }
 
-    @Getter private static String[] vehs = {"truck", "spacecar1", "spacecar2", "car", "car2", "car3", "bike", "bike2", "bike3", "dozer", "atv", "cybertruck" };
+    @Getter private static String[] vehs = {"SAD FOMO Explorer", "SAD To The Moon Spaceship", "Sad Builder", "SAD ATV4ATH", "SAD Speedster", "SAD WAGMI Bike", "SAD Elon", "Sad Tragic Truck", "SAD LFG Bike", "SAD Speedster X", "SAD F1-GM", "SAD Degen Bike" };
 
     public void saveDefault(){
         ArrayList<String> list = new ArrayList();
@@ -124,6 +128,21 @@ public final class Main extends JavaPlugin {
         inventorycfg.setDefault("name", "&aInventory");
 
         invname = Utils.replaceColorCodes(inventorycfg.getString("name"));
+    }
+
+    public void loadMobs(){
+        vehmobs.put("SAD FOMO Explorer", "spacecraft1");
+        vehmobs.put("SAD To The Moon Spaceship", "spacecraft2");
+        vehmobs.put("Sad Builder", "dozer");
+        vehmobs.put("SAD ATV4ATH", "atv");
+        vehmobs.put("SAD Speedster", "racingcar1");
+        vehmobs.put("SAD Speedster X", "racingcar2");
+        vehmobs.put("SAD F1-GM", "racingcar3");
+        vehmobs.put("SAD LFG Bike", "bike1");
+        vehmobs.put("SAD Degen Bike", "bike2");
+        vehmobs.put("SAD WAGMI Bike", "bike3");
+        vehmobs.put("SAD Elon", "cybertruck");
+        vehmobs.put("Sad Tragic Truck", "truck");
     }
 
     public void loadDefault(){
