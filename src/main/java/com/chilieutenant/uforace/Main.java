@@ -107,6 +107,7 @@ public final class Main extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        controlQueue();
     }
 
     @Getter private static String[] vehs = {"SAD FOMO Explorer", "SAD To The Moon Spaceship", "Sad Builder", "SAD ATV4ATH", "SAD Speedster", "SAD WAGMI Bike", "SAD Elon", "Sad Tragic Truck", "SAD LFG Bike", "SAD Speedster X", "SAD F1-GM", "SAD Degen Bike" };
@@ -153,6 +154,13 @@ public final class Main extends JavaPlugin {
             inv.setItem(slot, item);
 
             new NFTItem(name, slot, item);
+        }
+    }
+
+    public void controlQueue(){
+        for(Player p : Bukkit.getOnlinePlayers()){
+            Arena arena = ArenaMethods.getQueuedArena(p);
+            if(arena != null) arena.removePlayerFromQueue(p);
         }
     }
 }
