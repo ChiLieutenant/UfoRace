@@ -38,7 +38,7 @@ public class NFTMethods {
         }
 
         String s = MongoUtils.getData("UUID", p.getUniqueId().toString(), "veh", "selectedVEHS");
-        if(s.replace(" ", "_").equalsIgnoreCase(s)){
+        if(Utils.hasPermission(p, s.replace(" ", "_"))){
             editVehicle(p, "SAD Speedster");
         }
     }
@@ -54,11 +54,18 @@ public class NFTMethods {
         JSONArray responsearray;
         try{
             responsearray = nft.getJSONArray("traits");
+
         }catch(JSONException e){
             return "";
         }
 
         for(int i = 0; i < responsearray.length(); i++){
+            try{
+                if(!responsearray.getJSONObject(i).getString("trait_type").equalsIgnoreCase("The Happy Place Vehicle"))
+                    return "";
+            }catch (JSONException e){
+                return "";
+            }
             try{
                 type = responsearray.getJSONObject(i).getString("value");
             }catch (JSONException e){
