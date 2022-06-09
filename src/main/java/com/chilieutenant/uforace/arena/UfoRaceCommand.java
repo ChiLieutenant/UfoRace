@@ -131,10 +131,6 @@ public class UfoRaceCommand implements CommandExecutor {
                 player.teleport(player.getWorld().getSpawnLocation());
             }
         }
-
-        if (args[0].equalsIgnoreCase("test")) {
-            player.openInventory(Main.getInv());
-        }
         return false;
     }
 }

@@ -37,8 +37,8 @@ public class NFTMethods {
             }
         }
 
-        String s = MongoUtils.getData("UUID", p.getUniqueId().toString(), "veh", "selectedVEHS");
-        if(Utils.hasPermission(p, s.replace(" ", "_"))){
+        String s = getPlayerVehicle(p);
+        if(!Utils.hasPermission(p, s.replace(" ", "_"))){
             editVehicle(p, "SAD Speedster");
         }
     }
@@ -122,8 +122,8 @@ public class NFTMethods {
         }
     }
 
-    public static String getCar(String string){
-        return Main.getVehmobs().get(string);
+    public static String getCar(Player p){
+        return Main.getVehmobs().get(getPlayerVehicle(p));
     }
 
 }

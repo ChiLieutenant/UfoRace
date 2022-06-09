@@ -180,7 +180,7 @@ public class Arena {
         player.getInventory().setItem(6, Utils.itemBuilder(Material.COMPASS, "&aVehicle selection"));
         player.getInventory().setItem(8, Utils.getItem(Material.RED_BED, ChatColor.RED + "Leave"));
         player.teleport(getLobbyLocation());
-        setCar(player, NFTMethods.getPlayerVehicle(player));
+        setCar(player, NFTMethods.getCar(player));
     }
 
     public void removePlayerFromQueue(Player player){
