@@ -118,12 +118,43 @@ public class Utils {
         return blockHolder;
     }
 
+    public static Block getBottomBlock(final Location loc, final int positiveY, final int negativeY) {
+        Block blockHolder = loc.getBlock();
+        int y = 0;
+        // Only one of these while statements will go
+        while (!isAir(blockHolder.getType()) && Math.abs(y) < Math.abs(negativeY)) {
+            y--;
+            final Block tempblock = loc.clone().add(0, y, 0).getBlock();
+            if (isAir(tempblock.getType())) {
+                return blockHolder;
+            }
+
+            blockHolder = tempblock;
+        }
+
+        while (!isAir(blockHolder.getType()) && Math.abs(y) < Math.abs(positiveY)) {
+            y++;
+            blockHolder = loc.clone().add(0, y, 0).getBlock();
+            if (isAir(blockHolder.getType())) {
+                return blockHolder;
+            }
+        }
+
+        return blockHolder;
+    }
+
     public static ItemStack getItem(Material material, String name){
         ItemStack item = new ItemStack(material);
         ItemMeta im = item.getItemMeta();
         im.setDisplayName(name);
         item.setItemMeta(im);
         return item;
+    }
+
+    public static String getMMSS(long time){
+        String minutes = String.valueOf(time / 60);
+        String seconds = String.valueOf(time % 60);
+        return minutes + "m " + seconds + "s";
     }
 
     public static void addPermission(Player player, String permission) {

@@ -4,20 +4,24 @@ import com.chilieutenant.uforace.Main;
 import com.chilieutenant.uforace.events.GameJoinEvent;
 import com.chilieutenant.uforace.utils.Utils;
 import com.ticxo.modelengine.api.ModelEngineAPI;
+import com.ticxo.modelengine.api.model.ModeledEntity;
+import com.ticxo.modelengine.api.model.mount.controller.MountController;
+import com.ticxo.modelengine.api.model.mount.handler.IMountHandler;
 import io.lumine.mythic.api.MythicPlugin;
 import io.lumine.mythic.bukkit.BukkitAdapter;
 import io.lumine.mythic.bukkit.MythicBukkit;
 import io.lumine.mythic.bukkit.events.MythicMobSpawnEvent;
 import io.lumine.mythic.core.mobs.ActiveMob;
+import net.minecraft.network.protocol.game.PacketPlayOutAttachEntity;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.Player;
+import org.bukkit.craftbukkit.v1_17_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -25,12 +29,13 @@ import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.spigotmc.event.entity.EntityDismountEvent;
+import org.spigotmc.event.entity.EntityMountEvent;
 
 import java.util.Objects;
 
 public class ArenaListener implements Listener{
 
-    @EventHandler
+    /*@EventHandler
     public void onMobSpawn(MythicMobSpawnEvent event){
         ActiveMob mob = event.getMob();
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
@@ -49,6 +54,28 @@ public class ArenaListener implements Listener{
                 arena.setVehicle(owner, mob);
             }
         }, 10);
+    }*/
+
+
+    @EventHandler
+    public void onMountEvent(EntityMountEvent e){
+        if(!e.getEntity().getType().equals(EntityType.PLAYER)) return;
+
+        Player player = (Player) e.getEntity();
+        Arena arena = ArenaMethods.getArena(player);
+
+        if(arena == null) return;
+
+        e.setCancelled(true);
+        ModeledEntity modeledEntity = arena.getME(player);
+        modeledEntity.getMountHandler().setDriver(player);
+    }
+
+    @EventHandler
+    public void onInteractEvent(PlayerInteractAtEntityEvent event){
+        Player player = event.getPlayer();
+        Entity entity = event.getRightClicked();
+        if(ArenaMethods.getArena(player) != null && entity.getType() == EntityType.HORSE) event.setCancelled(true);
     }
 
     @EventHandler
@@ -71,7 +98,9 @@ public class ArenaListener implements Listener{
     public void onEntityDismount(EntityDismountEvent event){
         if(!event.getEntityType().equals(EntityType.PLAYER)) return;
         Player player = (Player) event.getEntity();
-        if(ArenaMethods.getArena(player) != null) event.setCancelled(true);
+        if(ArenaMethods.getArena(player) != null) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler

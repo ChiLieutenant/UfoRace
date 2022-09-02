@@ -23,7 +23,7 @@ public class ArenaMethods {
 
     @Getter public static List<Arena> arenas = new ArrayList<>();
     public static Material[] whitelist = new Material[]{
-            Material.RED_STAINED_GLASS, Material.ORANGE_STAINED_GLASS, Material.YELLOW_STAINED_GLASS, Material.LIME_STAINED_GLASS, Material.LIGHT_BLUE_STAINED_GLASS, Material.BLUE_STAINED_GLASS, Material.PURPLE_STAINED_GLASS, Material.MAGENTA_GLAZED_TERRACOTTA, Material.WHITE_WOOL, Material.BLACK_WOOL, Material.ORANGE_CONCRETE, Material.RED_CONCRETE, Material.PURPLE_CONCRETE, Material.BLUE_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.LIME_CONCRETE, Material.YELLOW_CONCRETE
+            Material.COAL_BLOCK, Material.RED_STAINED_GLASS, Material.ORANGE_STAINED_GLASS, Material.YELLOW_STAINED_GLASS, Material.LIME_STAINED_GLASS, Material.LIGHT_BLUE_STAINED_GLASS, Material.BLUE_STAINED_GLASS, Material.PURPLE_STAINED_GLASS, Material.MAGENTA_STAINED_GLASS, Material.MAGENTA_GLAZED_TERRACOTTA, Material.WHITE_WOOL, Material.BLACK_WOOL, Material.ORANGE_CONCRETE, Material.RED_CONCRETE, Material.PURPLE_CONCRETE, Material.BLUE_CONCRETE, Material.LIGHT_BLUE_CONCRETE, Material.LIME_CONCRETE, Material.YELLOW_CONCRETE, Material.YELLOW_CONCRETE_POWDER
     };
 
     public static Json getArenaData(String arena){

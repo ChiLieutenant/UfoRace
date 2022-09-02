@@ -3,15 +3,10 @@ package com.chilieutenant.uforace.utils;
 import com.chilieutenant.uforace.Main;
 import com.chilieutenant.uforace.MongoUtils;
 import com.chilieutenant.uforace.NFTSelection.NFTItem;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCollection;
 import com.nftworlds.wallet.objects.Network;
 import lombok.SneakyThrows;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.bson.Document;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -33,7 +28,7 @@ public class NFTMethods {
             JSONObject nft = ownedNFTs.getJSONObject(i).getJSONObject("metadata");
             String vehType = getVehType(nft);
             if(vehType.length() > 1) {
-                Utils.addPermission(p, "vehicle." + vehType.replace(" ", "_"));
+                Utils.addPermission(p, "vehicle." + vehType. replace(" ", "_"));
             }
         }
 
@@ -83,7 +78,7 @@ public class NFTMethods {
 
         Document doc = new Document();
         doc.append("UUID", p.getUniqueId().toString());
-        doc.append("veh", "car");
+        doc.append("veh", "SAD Speedster");
         collection.insertOne(doc);
     }
 

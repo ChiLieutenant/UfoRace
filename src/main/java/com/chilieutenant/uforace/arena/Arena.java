@@ -4,11 +4,14 @@ import com.chilieutenant.uforace.Main;
 import com.chilieutenant.uforace.events.GameFinishEvent;
 import com.chilieutenant.uforace.items.ItemEffects;
 import com.chilieutenant.uforace.items.Items;
+import com.chilieutenant.uforace.utils.CenteredText;
 import com.chilieutenant.uforace.utils.NFTMethods;
 import com.chilieutenant.uforace.utils.Utils;
 import com.ticxo.modelengine.api.ModelEngineAPI;
 import com.ticxo.modelengine.api.model.ActiveModel;
 import com.ticxo.modelengine.api.model.ModeledEntity;
+import com.ticxo.modelengine.api.model.mount.controller.MountController;
+import com.ticxo.modelengine.api.model.mount.handler.IMountHandler;
 import de.leonhard.storage.Json;
 import fr.mrmicky.fastboard.FastBoard;
 import io.lumine.mythic.api.MythicPlugin;
@@ -22,6 +25,7 @@ import lombok.Setter;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Directional;
 import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
@@ -43,18 +47,24 @@ public class Arena {
 
     @Getter private final Json data;
     @Getter @Setter private boolean isStarted;
+    private boolean gameStarted;
     private List<EnderCrystal> crystals = new ArrayList<>();
     private HashMap<Player, Long> times = new HashMap<>();
     private HashMap<Player, Location> checkPoints = new HashMap<>();
-    private HashMap<Player, ActiveMob> vehicles = new HashMap<>();
+    //private HashMap<Player, ActiveMob> vehicles = new HashMap<>();
+    private HashMap<Player, Entity> vehcs = new HashMap<>();
     private HashMap<Player, Vector> vecs = new HashMap<>();
+    private HashMap<Player, ModeledEntity> me = new HashMap<>();
     private HashMap<Player, Boolean> canSpeed = new HashMap<>();
+    private HashMap<Player, Boolean> isSlow = new HashMap<>();
     private HashMap<Player, Double> speed = new HashMap<>();
+    private HashMap<Player, Double> maxspeed = new HashMap<>();
     private List<FastBoard> boards = new ArrayList<>();
     private HashMap<Player, String> cars = new HashMap<>();
     private HashMap<Player, BukkitTask> speedRunnable = new HashMap<>();
     private HashMap<Player, BukkitTask> randomRunnable = new HashMap<>();
-    private long startTime;
+    private HashMap<Player, List<Location>> locations = new HashMap<>();
+    @Getter private long startTime;
     private BukkitTask runnable;
     public static HashMap<Player, ItemStack[]> storage = new HashMap<>();
     public static HashMap<Player, ItemStack[]> armors = new HashMap<>();
@@ -64,7 +74,9 @@ public class Arena {
         data.set("available", true);
         data.set("players", Collections.singletonList(""));
         data.set("queue", Collections.singletonList(""));
+        gameStarted = false;
     }
+
 
     public void setRandomRunnable(Player player, BukkitTask br){
         randomRunnable.put(player, br);
@@ -84,6 +96,10 @@ public class Arena {
         return speedRunnable.get(player);
     }
 
+    public ModeledEntity getME(Player player){
+        return me.get(player);
+    }
+
     public void setCar(Player player, String car){
         cars.put(player, car);
     }
@@ -92,12 +108,12 @@ public class Arena {
         return cars.get(player);
     }
 
-    public ActiveMob getVehicle(Player player){
-        return vehicles.get(player);
+    public Entity getVehicle(Player player){
+        return vehcs.get(player);
     }
 
-    public void setVehicle(Player player, ActiveMob vehicle){
-        vehicles.put(player, vehicle);
+    public void setVehicle(Player player, Entity vehicle){
+        vehcs.put(player, vehicle);
     }
 
     public void setVec(Player player, Vector vec){
@@ -148,6 +164,14 @@ public class Arena {
         data.set("lobby", Utils.getStringLocation(location));
     }
 
+    public Location getMainLobbyLocation(){
+        return Utils.getLocationString(data.getString("mainlobby"));
+    }
+
+    public void setMainLobbyLocation(Location location){
+        data.set("mainlobby", Utils.getStringLocation(location));
+    }
+
     public List<Location> getBuffers(){
         List<Location> buffers = new ArrayList<>();
         for(String locString : data.getStringList("buffers")){
@@ -175,6 +199,7 @@ public class Arena {
         }
         storage.put(player, player.getInventory().getContents());
         armors.put(player, player.getInventory().getArmorContents());
+        player.getInventory().clear();
         player.getInventory().setItem(0, new ItemStack(Material.COMPASS));
         player.getInventory().setItem(2, new ItemStack(Material.DIAMOND));
         player.getInventory().setItem(6, Utils.itemBuilder(Material.COMPASS, "&aVehicle selection"));
@@ -187,7 +212,7 @@ public class Arena {
         data.set("queue", Utils.removeStringFromList(data.getStringList("queue"), player.getUniqueId().toString()));
         player.getInventory().setContents(storage.get(player));
         player.getInventory().setArmorContents(armors.get(player));
-        player.teleport(player.getWorld().getSpawnLocation());
+        player.teleport(getMainLobbyLocation());
     }
 
     public List<Player> queuePlayers(){
@@ -211,9 +236,9 @@ public class Arena {
         }
         player.getInventory().setContents(storage.get(player));
         player.getInventory().setArmorContents(armors.get(player));
-        if(vehicles.containsKey(player)){
-            vehicles.get(player).remove();
-            vehicles.remove(player);
+        if(vehcs.containsKey(player)){
+            vehcs.get(player).remove();
+            vehcs.remove(player);
         }
         if(winners().contains(player)) {
             removeWinner(player);
@@ -239,11 +264,44 @@ public class Arena {
         data.set("players", Collections.singletonList(""));
     }
 
+    public void createCar(Player player){
+        Horse horse = player.getWorld().spawn(player.getLocation().add(0, 1, 0), Horse.class);
+        horse.setInvulnerable(true);
+        horse.setInvisible(true);
+        horse.setTamed(true);
+        horse.setOwner(player);
+        horse.getInventory().setSaddle(new ItemStack(Material.SADDLE));
+        horse.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0);
+
+        ActiveModel model = ModelEngineAPI.api.getModelManager().createActiveModel(getCar(player));
+        model.setDamageTint(false);
+        model.setClamp(0);
+
+        ModeledEntity modeledEntity = ModelEngineAPI.api.getModelManager().createModeledEntity(horse);
+
+        modeledEntity.addActiveModel(model);
+        modeledEntity.detectPlayers();
+        modeledEntity.setInvisible(true);
+        modeledEntity.getMountHandler().setSteerable(true);
+
+        IMountHandler mountHandler = modeledEntity.getMountHandler();
+        MountController mountController = ModelEngineAPI.api.getControllerManager().createController("force_walking");
+        mountHandler.removePassenger(player);
+        mountHandler.setCanDamageMount(mountHandler.getDriver(), true);
+        mountHandler.setDriver(null);
+        mountHandler.setDriver(player, mountController);
+        mountHandler.cannotDamageMount(player);
+
+        //horse.addPassenger(player);
+        me.put(player, modeledEntity);
+        setVehicle(player, horse);
+    }
+
     public void startForQueue(){
         if(isStarted()) return;
         setStarted(true);
         new BukkitRunnable(){
-            int i = 600;
+            int i = 1200;
             @Override
             public void run() {
                 i--;
@@ -265,24 +323,20 @@ public class Arena {
     }
 
     public void count(Player player){
-        Location loc = player.getLocation();
+        createCar(player);
+        times.put(player, System.currentTimeMillis());
         new BukkitRunnable(){
             int i = 100;
             @Override
             public void run() {
                 i--;
                 if(i <= 0){
-                    Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
-                        @Override
-                        public void run() {
-                            MythicBukkit.inst().getAPIHelper().castSkill(player, getCar(player));
-                            times.put(player, System.currentTimeMillis());
-                        }
-                    }, 5);
+                    if(!gameStarted) {
+                        gameStarted = true;
+                    }
                     this.cancel();
                     return;
                 }
-                player.teleport(loc);
                 if(i % 20 == 0)
                     player.sendTitle(ChatColor.AQUA + "Game is starting in", ChatColor.DARK_AQUA + "" + (i/20) + " seconds...", 10, 20, 10);
             }
@@ -292,27 +346,48 @@ public class Arena {
     public List<String> getLine(){
         List<String> line = new ArrayList<>();
         line.add(ChatColor.translateAlternateColorCodes('&', "&e&lTime:"));
-        line.add(ChatColor.translateAlternateColorCodes('&', "&r &r &e" + ((300000 - (System.currentTimeMillis() - startTime)) / 1000) + " seconds"));
+        line.add(ChatColor.translateAlternateColorCodes('&', "&r &r &e" + Utils.getMMSS(((300000 - (System.currentTimeMillis() - startTime)) / 1000)) + " seconds"));
         line.add(ChatColor.translateAlternateColorCodes('&', "&r &r &r"));
         line.add(ChatColor.translateAlternateColorCodes('&', "&e&lDistances:"));
         for(Player p : arenaPlayers()){
             if(winners().contains(p)) {
                 line.add(ChatColor.translateAlternateColorCodes('&', "&r &r &e" + p.getName() + ": &70"));
             }else{
-                line.add(ChatColor.translateAlternateColorCodes('&', "&r &r &e" + p.getName() + ": &7" + (int) p.getLocation().distance(getEndLocation())));
+                line.add(ChatColor.translateAlternateColorCodes('&', "&r &r &e" + p.getName() + ": &7" + (int) p.getLocation().distance(getEndLocation()) * ((Math.abs(p.getLocation().getY() - getEndLocation().getY()) / 5) + 1)));
             }
         }
         return line;
     }
 
     public double getSpeed(Player player){
+        if(isSlow.get(player)){
+            double spd = speed.get(player);
+            spd -= 0.2;
+            if(spd < 0) spd = 0.1;
+            return spd;
+        }
         return speed.get(player);
     }
 
+    public double getMaxSpeed(Player player){
+        return maxspeed.get(player);
+    }
+
+    public void setMaxSpeed(Player player, double spd){
+        maxspeed.put(player, spd);
+    }
+
+    public void forceSetSpeed(Player player, double spd){
+        float exp = (float) (spd * (7/2));
+        if(exp >= 1) exp = 0.99f;
+        player.setExp(exp);
+        speed.put(player, spd);
+    }
+
     public void setSpeed(Player player, double spd){
-        if(spd < 0) return;
-        if(getSpeedRunnable(player) != null && !getSpeedRunnable(player).isCancelled()) spd += 2;
-        float exp = (float) (spd * (7/5));
+        if(spd < 0 || !gameStarted) return;
+        if(getSpeed(player) > spd && spd < 0.2) spd = 0.2;
+        float exp = (float) (spd * (7/2));
         if(exp >= 1) exp = 0.99f;
         player.setExp(exp);
         speed.put(player, spd);
@@ -348,9 +423,13 @@ public class Arena {
             p.getInventory().clear();
             Location loc = getStartLocs().get(i);
             p.teleport(loc);
+            isSlow.put(p, false);
             canSpeed.put(p, true);
             checkPoints.put(p, loc);
-            speed.put(p, 0d);
+            maxspeed.put(p, 1.6d);
+            speed.put(p, 0.3d);
+            vecs.put(p, p.getLocation().getDirection());
+            locations.put(p, new ArrayList<>());
             i++;
             count(p);
             addPlayerToArena(p);
@@ -375,8 +454,8 @@ public class Arena {
 
     public void removeWinner(Player player){
         data.set("winners", Utils.removeStringFromList(data.getStringList("winners"), player.getUniqueId().toString()));
-        vehicles.get(player).remove();
-        vehicles.remove(player);
+        vehcs.get(player).remove();
+        vehcs.remove(player);
         player.setGameMode(GameMode.SURVIVAL);
         if(winners().size() >= 3 || winners().size() == arenaPlayers().size()){
             finish();
@@ -385,10 +464,10 @@ public class Arena {
 
     public void addWinner(Player player){
         data.set("winners", Utils.addStringToList(data.getStringList("winners"), player.getUniqueId().toString()));
-        vehicles.get(player).remove();
-        vehicles.remove(player);
+        vehcs.get(player).remove();
+        player.sendTitle(ChatColor.GREEN + "Congratulation!", ChatColor.GRAY + "Spectator Mode", 10, 20, 10);
         player.setGameMode(GameMode.SPECTATOR);
-        if(winners().size() >= 3 || winners().size() == arenaPlayers().size()){
+        if(winners().size() == arenaPlayers().size()){
             finish();
         }
     }
@@ -404,6 +483,7 @@ public class Arena {
     }
 
     public void runnable(){
+        if(!gameStarted) return;
         if(System.currentTimeMillis() > startTime + 300000){
             finish();
             return;
@@ -416,37 +496,12 @@ public class Arena {
 
             Location loc = p.getLocation();
 
-            Entity vehicle = p.getVehicle();
-            if(vehicle == null) {
-                continue;
-            }
+            Entity vehicle = getVehicle(p);
 
-            /*for(Entity e : p.getNearbyEntities(0.1, 0.1, 0.1)){
-                if(MythicBukkit.inst().getAPIHelper().isMythicMob(e)) {
-                    ActiveMob ab = MythicBukkit.inst().getAPIHelper().getMythicMobInstance(e);
-                    vehicles.put(p, ab);
-                }
-            }*/
-            if(!vehicles.containsKey(p) || vehicles.get(p).isDead() || vehicles.get(p) == null) {
-                if(System.currentTimeMillis() > startTime + 1500 && times.containsKey(p) && System.currentTimeMillis() > times.get(p) + 1500) {
-                    MythicBukkit.inst().getAPIHelper().castSkill(p, getCar(p));
-                    times.put(p, System.currentTimeMillis());
-                }
-                continue;
-            }
-            ActiveMob ab = vehicles.get(p);
-            if(ab == null || ab.isDead()){
-                if(System.currentTimeMillis() > startTime + 1500 && times.containsKey(p) && System.currentTimeMillis() > times.get(p) + 1000) {
-                    MythicBukkit.inst().getAPIHelper().castSkill(p, getCar(p));
-                    times.put(p, System.currentTimeMillis());
-                }
-                continue;
-            }
-
-            Vector vec = BukkitAdapter.adapt(ab.getEntity().getVelocity());
+            Vector vec = vehicle.getVelocity();
             vec.setX(0.0);
             vec.setZ(0.0);
-            ab.getEntity().setVelocity(BukkitAdapter.adapt(vecs.get(p).clone().add(vec)));
+            vehicle.setVelocity(vecs.get(p).clone().add(vec));
 
             //check buffer
             for(Entity e : p.getNearbyEntities(1, 1, 1)){
@@ -456,7 +511,7 @@ public class Arena {
                     e.remove();
                 }
                 if(e instanceof Item item){
-                    if(item.getItemStack().getType().equals(Material.HORN_CORAL) && !Objects.requireNonNull(item.getItemStack().getItemMeta()).getDisplayName().contains(p.getName())){
+                    if(item.getItemStack().getType().equals(Material.HORN_CORAL) && !item.getCustomName().contains(p.getName())){
                         slide(p);
                         item.remove();
                     }
@@ -465,11 +520,30 @@ public class Arena {
             Block b = Utils.getTopBlock(loc, 4, 10);
             //check if falls
             if(b == null || (!Arrays.asList(ArenaMethods.whitelist).contains(b.getType()) && !b.getType().toString().toLowerCase().contains("carpet"))){
-                Location loca = checkPoints.get(p);
-                ((CraftEntity) BukkitAdapter.adapt(ab.getEntity())).getHandle().setPositionRotation(loca.getX(), loca.getY(), loca.getZ(), loca.getYaw(), loca.getPitch());
-                p.sendMessage(ChatColor.RED + "You have teleported to the last checkpoint.");
-                setSpeed(p, 0);
+                Location loca;
+                if(locations.get(p).size() > 6){
+                    loca = locations.get(p).get(locations.get(p).size() - 5);
+                }else{
+                    loca = locations.get(p).get(locations.get(p).size() - 1);
+                }
+                ((CraftEntity) vehicle).getHandle().setPositionRotation(loca.getX(), loca.getY(), loca.getZ(), loca.getYaw(), loca.getPitch());
+                forceSetSpeed(p, 0);
+                setCanSpeed(p, false);
+                p.sendTitle(ChatColor.RED + "!!!!!!!!", "", 10, 30, 10);
+                Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                    setCanSpeed(p, true);
+                }, 60);
                 continue;
+            }else{
+                List<Location> locs = locations.get(p);
+                locs.add(p.getLocation());
+                locations.put(p, locs);
+            }
+
+            if(b.getType().equals(Material.BLACK_CARPET) || b .getType().equals(Material.COAL_BLOCK)){
+                if(!isSlow.get(p)) isSlow.put(p, true);
+            }else{
+                if(isSlow.get(p)) isSlow.put(p, false);
             }
 
             //check point
@@ -479,7 +553,7 @@ public class Arena {
             }
 
             //finish location
-            if(b.getType().equals(Material.BLACK_WOOL)){
+            if(b.getType().equals(Material.BLACK_WOOL) && p.getLocation().distance(getEndLocation()) < 16){
                 addWinner(p);
             }
 
@@ -509,28 +583,37 @@ public class Arena {
                         continue;
                 }
                 newVel.multiply(6);
-                ab.getEntity().setVelocity(BukkitAdapter.adapt(BukkitAdapter.adapt(ab.getEntity().getVelocity()).add(newVel).multiply(3)));
+                vehicle.setVelocity(vehicle.getVelocity().add(newVel).multiply(3));
             }
         }
     }
 
     public void finish(){
         setAvailable(true);
+        gameStarted = false;
         runnable.cancel();
         Player winner = null;
+
+        for(Entity e : vehcs.values()){
+            e.remove();
+        }
+
         if(!winners().isEmpty()) winner = winners().get(0);
         GameFinishEvent event = new GameFinishEvent(winner, this);
         Bukkit.getPluginManager().callEvent(event);
         for(Player p : arenaPlayers()) {
-            p.sendMessage(ChatColor.DARK_AQUA + "-------------------" + ChatColor.AQUA + "Winners" + ChatColor.DARK_AQUA + "-------------------");
+            vehcs.get(p).remove();
             int i = 1;
+            CenteredText.sendCenteredMessage(p, "&a&m                                                                    ");
+            CenteredText.sendCenteredMessage(p, "&l&eWINNERS");
             for(Player p1 : winners()){
-                p.sendMessage(ChatColor.DARK_AQUA + "" + i + "-) " + ChatColor.GRAY + p1.getName());
+                CenteredText.sendCenteredMessage(p, "&7" + i + "-) &b" + p1.getName());
                 i++;
             }
+            CenteredText.sendCenteredMessage(p, "&a&m                                                                    ");
             p.getInventory().setContents(storage.get(p));
             p.getInventory().setArmorContents(armors.get(p));
-            p.teleport(p.getWorld().getSpawnLocation());
+            p.teleport(getMainLobbyLocation());
             p.setGameMode(GameMode.SURVIVAL);
         }
         emptyPlayers();
@@ -546,11 +629,8 @@ public class Arena {
         }
         boards.clear();
 
-        for(ActiveMob e : vehicles.values()){
-            e.remove();
-        }
         data.set("winners", Arrays.asList(""));
-        vehicles.clear();
+        vehcs.clear();
     }
 
 }

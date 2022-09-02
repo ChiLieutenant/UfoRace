@@ -5,6 +5,7 @@ import com.chilieutenant.uforace.arena.Arena;
 import com.chilieutenant.uforace.arena.ArenaMethods;
 import com.chilieutenant.uforace.utils.ParticleEffect;
 import com.chilieutenant.uforace.utils.Utils;
+import com.ticxo.modelengine.api.model.ModeledEntity;
 import io.lumine.mythic.bukkit.BukkitAdapter;
 import io.lumine.mythic.core.mobs.ActiveMob;
 import org.bukkit.Bukkit;
@@ -30,18 +31,18 @@ public class ItemEffects {
         Arena arena = ArenaMethods.getArena(player);
         if(arena == null) return;
 
-        ActiveMob vehicle = arena.getVehicle(player);
+        Entity vehicle = arena.getVehicle(player);
 
         arena.setCanSpeed(player, false);
         Vector vec = player.getLocation().getDirection();
         vec.rotateAroundY(80);
-        arena.setSpeed(player, 0);
+        arena.forceSetSpeed(player, 0);
         long time = System.currentTimeMillis();
         new BukkitRunnable(){
             @Override
             public void run() {
                 if(System.currentTimeMillis() < time + 1500){
-                    vehicle.getEntity().setVelocity(BukkitAdapter.adapt(vec.normalize().multiply(0.3)));
+                    vehicle.setVelocity(vec.normalize().multiply(0.3));
                 }
                 if(System.currentTimeMillis() > time + 2500){
                     arena.setCanSpeed(player, true);
@@ -49,7 +50,6 @@ public class ItemEffects {
                 }
             }
         }.runTaskTimer(Main.getInstance(), 0, 1);
-
     }
 
     public static void throwHead(Player player){
@@ -57,7 +57,7 @@ public class ItemEffects {
         ArmorStand as = loc.getWorld().spawn(loc, ArmorStand.class);
         as.setVisible(false);
         as.getEquipment().setHelmet(Items.SADBOT_HEAD.getItem());
-        as.setVelocity(player.getLocation().getDirection().normalize().multiply(2));
+        as.setVelocity(player.getLocation().getDirection().normalize().multiply(5));
 
         long time = System.currentTimeMillis();
         new BukkitRunnable(){
@@ -69,12 +69,12 @@ public class ItemEffects {
                     return;
                 }
 
-                for(Entity e : Utils.getEntitiesAroundPoint(as.getLocation(), 2)){
+                for(Entity e : Utils.getEntitiesAroundPoint(as.getLocation(), 6)){
                     if(e instanceof Player target && e.getUniqueId() != player.getUniqueId()){
                         Arena arena = ArenaMethods.getArena(target);
                         if(arena == null) continue;
 
-                        arena.setSpeed(target, 0);
+                        arena.forceSetSpeed(target, 0);
                         target.damage(0.0005, player);
                         as.remove();
                         this.cancel();
@@ -93,16 +93,24 @@ public class ItemEffects {
 
         BossBar bar = Bukkit.createBossBar(ChatColor.YELLOW + "Speed Boost", BarColor.YELLOW, BarStyle.SOLID, BarFlag.PLAY_BOSS_MUSIC);
         bar.addPlayer(player);
+        arena.setMaxSpeed(player, 1.9);
+        double spd = arena.getSpeed(player);
+        spd += 1;
+        if(spd > 1.9) spd = 1.9;
+        arena.setSpeed(player, spd);
         arena.setSpeedRunnable(player, new BukkitRunnable(){
             int i = 200;
             @Override
             public void run() {
                 i--;
                 bar.setProgress(((double) i)/200);
-
                 if(i <= 0){
                     bar.removeAll();
-                    arena.setSpeed(player, 5);
+                    arena.setMaxSpeed(player, 1.6);
+                    double spd = arena.getSpeed(player);
+                    spd -= 0.4;
+                    if(spd < 0) spd = 0.3;
+                    arena.setSpeed(player, spd);
                     this.cancel();
                 }
             }
@@ -112,15 +120,17 @@ public class ItemEffects {
     public static void superHorn(Player player){
         Location loc = player.getLocation();
         ParticleEffect.EXPLOSION_LARGE.display(loc, 3, 1, 1, 1);
-        for(Entity e : Utils.getEntitiesAroundPoint(loc, 2)){
+        for(Entity e : Utils.getEntitiesAroundPoint(loc, 9)){
             if(e instanceof Player target && e.getUniqueId() != player.getUniqueId()){
                 Arena arena = ArenaMethods.getArena(target);
                 if(arena == null) continue;
 
-                ActiveMob ab = arena.getVehicle(target);
-                Vector vec = target.getLocation().toVector().subtract(loc.toVector()).normalize().multiply(2);
-                vec.setY(0.2);
-                ab.getEntity().setVelocity(BukkitAdapter.adapt(vec));
+                arena.forceSetSpeed(target, 0);
+                Entity ab = arena.getVehicle(target);
+
+                Vector vec = target.getLocation().toVector().subtract(loc.toVector()).multiply(3);
+                vec.setY(0.4);
+                ab.setVelocity(vec);
             }
         }
     }
@@ -146,11 +156,49 @@ public class ItemEffects {
                         speedBoost(player);
                     }else{
                         player.getInventory().setItem(0, randomElement.getItem());
-                        player.sendMessage(ChatColor.GRAY + "Press Q to use the item!");
+                        player.sendTitle(ChatColor.GRAY + "Press Q to use the item!", "", 5, 10, 5);
                     }
                     this.cancel();
                 }
             }
         }.runTaskTimer(Main.getInstance(), 0, 10));
+    }
+
+    public static void throwBomb(Player player){
+        Location loc = player.getLocation();
+        ArmorStand as = loc.getWorld().spawn(loc, ArmorStand.class);
+        as.setVisible(false);
+        as.getEquipment().setHelmet(Items.BOMB.getItem());
+        as.setVelocity(player.getLocation().getDirection().normalize().multiply(4));
+
+        long time = System.currentTimeMillis();
+        new BukkitRunnable(){
+            @Override
+            public void run() {
+                if(System.currentTimeMillis() > time + 5000){
+                    as.remove();
+                    this.cancel();
+                    return;
+                }
+
+                if((as.isOnGround() && System.currentTimeMillis() > time + 300)){
+                    ParticleEffect.EXPLOSION_LARGE.display(as.getLocation(), 10, 2, 2, 2);
+                    for(Entity e : Utils.getEntitiesAroundPoint(as.getLocation(), 7)){
+                        if(e instanceof Player target && e.getUniqueId() != player.getUniqueId()){
+                            Arena arena = ArenaMethods.getArena(target);
+                            if(arena == null) continue;
+
+                            arena.forceSetSpeed(target, 0);
+                            Entity ab = arena.getVehicle(target);
+                            Vector vec = target.getLocation().toVector().subtract(as.getLocation().toVector()).normalize().multiply(2);
+                            vec.setY(0.4);
+                            ab.setVelocity(vec);
+                        }
+                    }
+                    as.remove();
+                    this.cancel();
+                }
+            }
+        }.runTaskTimer(Main.getInstance(), 0, 1);
     }
 }

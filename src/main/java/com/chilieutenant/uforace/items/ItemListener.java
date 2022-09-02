@@ -1,6 +1,7 @@
 package com.chilieutenant.uforace.items;
 
 import com.chilieutenant.uforace.Main;
+import com.chilieutenant.uforace.arena.Arena;
 import com.chilieutenant.uforace.arena.ArenaMethods;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -21,16 +22,26 @@ public class ItemListener implements Listener {
     public void onDrop(PlayerDropItemEvent event){
         Item item = event.getItemDrop();
         if(ArenaMethods.getQueuedArena(event.getPlayer()) != null) event.setCancelled(true);
+        Arena arena = ArenaMethods.getArena(event.getPlayer());
+
+        if(arena == null) return;
+
+        if(arena.getRandomRunnable(event.getPlayer()) != null && !arena.getRandomRunnable(event.getPlayer()).isCancelled()) {
+            event.setCancelled(true);
+            return;
+        }
+
         if(item.getItemStack().isSimilar(Items.BANANA_PEEL.getItem())){
-            ItemStack banana = Items.BANANA_PEEL.getItem();
-            ItemMeta im = banana.getItemMeta();
-            im.setDisplayName(ChatColor.YELLOW + event.getPlayer().getName() + " Banana Peel");
-            banana.setItemMeta(im);
-            item.setItemStack(banana);
+            item.setCustomName(event.getPlayer().getName() + " Banana Peel");
             item.setGlowing(true);
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if(!item.isDead()) item.remove();
             }, 200);
+        }
+
+        if(item.getItemStack().isSimilar(Items.BOMB.getItem())){
+            item.remove();
+            ItemEffects.throwBomb(event.getPlayer());
         }
 
         if(item.getItemStack().isSimilar(Items.SADBOT_HEAD.getItem())){

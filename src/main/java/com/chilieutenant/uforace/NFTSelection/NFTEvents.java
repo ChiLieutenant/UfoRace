@@ -24,7 +24,7 @@ public class NFTEvents implements Listener {
         if(event.getView().getTitle().equalsIgnoreCase(Main.getInvname())){
             event.setCancelled(true);
             if(ArenaMethods.getQueuedArena(p) == null) return;
-            Arena arena = ArenaMethods.getArena(p);
+            Arena arena = ArenaMethods.getQueuedArena(p);
             ItemStack item = event.getInventory().getItem(event.getSlot());
             if(item == null) return;
             NFTItem nftitem = NFTMethods.getNFTItemBySlot(event.getSlot());
@@ -41,7 +41,10 @@ public class NFTEvents implements Listener {
 
     @EventHandler
     public void playerJoinEvent(PlayerJoinEvent event){
-        NFTMethods.saveDefault(event.getPlayer());
-        NFTMethods.loadNFT(event.getPlayer());
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Main.getInstance(), () -> {
+            NFTMethods.saveDefault(event.getPlayer());
+            NFTMethods.loadNFT(event.getPlayer());
+        });
+
     }
 }

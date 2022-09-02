@@ -29,6 +29,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import java.io.File;
+import java.io.FileInputStream;
+
 public final class Main extends JavaPlugin {
 
     @Getter public static Main instance;
@@ -50,15 +53,10 @@ public final class Main extends JavaPlugin {
 
         pm = ProtocolLibrary.getProtocolManager();
         pm.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.STEER_VEHICLE) {
-            //
-            // Steer Vehicle packet gets called when the player is riding a vehicle and
-            // presses WASD or some other keys like spacebar.
-            //
             @Override
             public void onPacketReceiving(PacketEvent event) {
                 if (event.getPacketType() == PacketType.Play.Client.STEER_VEHICLE) {
 
-                    // Grab the necessary objects
                     PacketContainer pc = event.getPacket();
                     Player player = event.getPlayer();
 
@@ -74,13 +72,12 @@ public final class Main extends JavaPlugin {
 
                     arena.setVec(player, ArenaMethods.getVelocityVector(player, side, forw, arena.getSpeed(player)));
 
-
-                    // Now, calculate the new velocity using the function below, and apply to the
-                    // vehicle entity
                     if(forw > 0 && arena.canSpeed(player)){
-                        if(arena.getSpeed(player) < 5) arena.setSpeed(player, arena.getSpeed(player) + 0.0075);
+                        if(arena.getSpeed(player) < arena.getMaxSpeed(player)) {
+                            arena.setSpeed(player, arena.getSpeed(player) + 0.0045);
+                        }
                     }else{
-                        arena.setSpeed(player, arena.getSpeed(player) - 0.02);
+                        arena.setSpeed(player, arena.getSpeed(player) - 0.005);
                     }
                 }
             }
@@ -134,16 +131,16 @@ public final class Main extends JavaPlugin {
     }
 
     public void loadMobs(){
-        vehmobs.put("SAD FOMO Explorer", "spacecraft1");
-        vehmobs.put("SAD To The Moon Spaceship", "spacecraft2");
+        vehmobs.put("SAD FOMO Explorer", "spacecraft_01");
+        vehmobs.put("SAD To The Moon Spaceship", "spacecraft_02");
         vehmobs.put("Sad Builder", "dozer");
         vehmobs.put("SAD ATV4ATH", "atv");
-        vehmobs.put("SAD Speedster", "racingcar1");
-        vehmobs.put("SAD Speedster X", "racingcar2");
-        vehmobs.put("SAD F1-GM", "racingcar3");
-        vehmobs.put("SAD LFG Bike", "bike1");
-        vehmobs.put("SAD Degen Bike", "bike2");
-        vehmobs.put("SAD WAGMI Bike", "bike3");
+        vehmobs.put("SAD Speedster", "racing_car_01");
+        vehmobs.put("SAD Speedster X", "racing_car_02");
+        vehmobs.put("SAD F1-GM", "racing_car_03");
+        vehmobs.put("SAD LFG Bike", "motorbike_01");
+        vehmobs.put("SAD Degen Bike", "motorbike_02");
+        vehmobs.put("SAD WAGMI Bike", "motorbike_03");
         vehmobs.put("SAD Elon", "cybertruck");
         vehmobs.put("Sad Tragic Truck", "truck");
     }

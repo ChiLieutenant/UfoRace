@@ -3,6 +3,7 @@ package com.chilieutenant.uforace.arena;
 import com.chilieutenant.uforace.Main;
 import com.chilieutenant.uforace.events.GameJoinEvent;
 import com.chilieutenant.uforace.events.GameLeaveEvent;
+import com.chilieutenant.uforace.items.Items;
 import com.chilieutenant.uforace.utils.NFTMethods;
 import io.lumine.mythic.bukkit.BukkitAPIHelper;
 import io.lumine.mythic.bukkit.BukkitAdapter;
@@ -25,12 +26,21 @@ public class UfoRaceCommand implements CommandExecutor {
         if(args.length < 1) return false;
 
         if(player.hasPermission("admin.ur")) {
+            if(args[0].equalsIgnoreCase("items")){
+                for(Items items : Items.values()){
+                    player.getInventory().addItem(items.getItem());
+                }
+            }
+            if(args[0].equalsIgnoreCase("forcestart")){
+                Arena arena = ArenaMethods.getQueuedArena(player);
+                arena.start();
+            }
             if (args[0].equalsIgnoreCase("arena")) {
                 if(args.length == 3){
                     if(args[1].equalsIgnoreCase("create")) {
                         String name = args[2];
                         if (ArenaMethods.isArenaCreated(name)) {
-                            player.sendMessage(ChatColor.RED + "A arena named " + name + " has already created.");
+                            player.sendMessage(ChatColor.RED + "An arena named " + name + " has already created.");
                             return false;
                         }
                         ArenaMethods.createArena(name);
@@ -39,7 +49,7 @@ public class UfoRaceCommand implements CommandExecutor {
                     if(args[1].equalsIgnoreCase("remove")) {
                         String name = args[2];
                         if (!ArenaMethods.isArenaCreated(name)) {
-                            player.sendMessage(ChatColor.RED + "A arena named " + name + " has not created.");
+                            player.sendMessage(ChatColor.RED + "An arena named " + name + " has not created.");
                             return false;
                         }
                         ArenaMethods.removeArena(name);
@@ -48,7 +58,7 @@ public class UfoRaceCommand implements CommandExecutor {
                     if(args[1].equalsIgnoreCase("endloc")) {
                         String name = args[2];
                         if (!ArenaMethods.isArenaCreated(name) || ArenaMethods.getArena(name) == null) {
-                            player.sendMessage(ChatColor.RED + "A arena named " + name + " has not created.");
+                            player.sendMessage(ChatColor.RED + "An arena named " + name + " has not created.");
                             return false;
                         }
                         Arena arena = ArenaMethods.getArena(name);
@@ -58,17 +68,27 @@ public class UfoRaceCommand implements CommandExecutor {
                     if(args[1].equalsIgnoreCase("lobby")) {
                         String name = args[2];
                         if (!ArenaMethods.isArenaCreated(name) || ArenaMethods.getArena(name) == null) {
-                            player.sendMessage(ChatColor.RED + "A arena named " + name + " has not created.");
+                            player.sendMessage(ChatColor.RED + "An arena named " + name + " has not created.");
                             return false;
                         }
                         Arena arena = ArenaMethods.getArena(name);
                         arena.setLobbyLocation(player.getLocation());
                         player.sendMessage(ChatColor.GREEN + "You have successfully set the lobby location of " + name);
                     }
+                    if(args[1].equalsIgnoreCase("mainlobby")) {
+                        String name = args[2];
+                        if (!ArenaMethods.isArenaCreated(name) || ArenaMethods.getArena(name) == null) {
+                            player.sendMessage(ChatColor.RED + "An arena named " + name + " has not created.");
+                            return false;
+                        }
+                        Arena arena = ArenaMethods.getArena(name);
+                        arena.setMainLobbyLocation(player.getLocation());
+                        player.sendMessage(ChatColor.GREEN + "You have successfully set the main lobby location of " + name);
+                    }
                     if(args[1].equalsIgnoreCase("addbuffer")) {
                         String name = args[2];
                         if (!ArenaMethods.isArenaCreated(name) || ArenaMethods.getArena(name) == null) {
-                            player.sendMessage(ChatColor.RED + "A arena named " + name + " has not created.");
+                            player.sendMessage(ChatColor.RED + "An arena named " + name + " has not created.");
                             return false;
                         }
                         Arena arena = ArenaMethods.getArena(name);
@@ -78,7 +98,7 @@ public class UfoRaceCommand implements CommandExecutor {
                     if(args[1].equalsIgnoreCase("addstart")) {
                         String name = args[2];
                         if (!ArenaMethods.isArenaCreated(name) || ArenaMethods.getArena(name) == null) {
-                            player.sendMessage(ChatColor.RED + "A arena named " + name + " has not created.");
+                            player.sendMessage(ChatColor.RED + "An arena named " + name + " has not created.");
                             return false;
                         }
                         Arena arena = ArenaMethods.getArena(name);
@@ -128,7 +148,7 @@ public class UfoRaceCommand implements CommandExecutor {
             }
             if(arena != null){
                 arena.removePlayerFromArena(player);
-                player.teleport(player.getWorld().getSpawnLocation());
+                player.teleport(arena.getMainLobbyLocation());
             }
         }
         return false;
